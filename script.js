@@ -1,51 +1,129 @@
 var points = [],
 	сenters = [],
-	classes = [],
-	pointsCount = 20000,
+	classes,
+	pointsCount = 12000,
 	coordinateCount = 2;
-	classesCount = 6;
+	classesCount = 8,
+	isTheSameClasses = true;
 
 var svg;
 
-var colors = ["red", "green", "blue", "purple", "yellow", "black"];
+var colors = [
+	"red",
+ 	"brown",
+ 	"blue", 
+ 	"purple", 
+ 	"yellow", 
+ 	"orange", 
+ 	"gray", 
+ 	"green", 
+ 	"crimson", 
+ 	"lavender", 
+ 	"indigo", 
+ 	"moccasin", 
+ 	"orchid", 
+ 	"plum", 
+ 	"silver", 
+ 	"tan"
+ 	];
 
 function onLoad (){
 
-	svgContainer = d3.select("body")
+	svgContainer = d3.select("div")
 	.append("svg")                                 
-	.attr("width", 200)
-	.attr("height", 200);
+	.attr("width", 400)
+	.attr("height", 400);
 
-   points = generatePoints(pointsCount);
-   centers = generateClassCenters(classesCount);
+	points = generatePoints(pointsCount);
+    centers = generateClassCenters(classesCount);
+    initializeClasses();
+    dividePointsToClasses();
 
-   initializeClasses();
-   dividePointToClasses();
-   drawClasses();
+    drawClasses();   
+   
+    //console.log(classes);
+    //console.log(pointsAreEqual(points[1024], points[10000]));
+    //console.log(findDistanceBetweenPoints(points[1024], points[10000]));
+    /*console.log(
+    				classes[0].length +
+   				  	classes[1].length + 
+	   				classes[2].length + 
+   				 	classes[3].length + 
+   				 	classes[4].length + 
+   				 	classes[5].length);*/
+}
 
-   //console.log(points);
-   //console.log(centers);
-   //console.log(classes);
-   //console.log(pointsAreEqual(points[1024], points[10000]));
-   //console.log(points[1024], " ", points[10000]);
-   //console.log(findDistanceBetweenPoints(points[1024], points[10000]));
+function nextDistribution(){
+	var newCenters = recalculateCenters();
+	console.log(isTheSameClasses);
+	if(!isTheSameClasses){
+		initializeClasses();
+		d3.selectAll("circle").remove();
+		centers = newCenters;
+		dividePointsToClasses();
+		drawClasses();
+	}
+	
+}
+
+function finishDistribution() {
+	isTheSameClasses = false;
+	while(!isTheSameClasses){
+		var newCenters = recalculateCenters();
+		console.log(isTheSameClasses);
+		initializeClasses();
+		d3.selectAll("circle").remove();
+		centers = newCenters;
+		dividePointsToClasses();
+	}
+	drawClasses();
+	console.log(isTheSameClasses);
+}
+
+function recalculateCenters() {	
+	var newCenters = [];
+
+	isTheSameClasses = true;
+	classes.forEach(function(pointsClass, index) {
+		var vector = [0, 0];
+
+		pointsClass.forEach(function(point) {
+			vector[0] += point[0];
+			vector[1] += point[1];
+		});
+
+		vector[0] = Math.floor(vector[0] / pointsClass.length);
+		vector[1] = Math.floor(vector[1] / pointsClass.length);
+
+		newCenters.push(vector);
+		if(!pointsAreEqual(vector, centers[index])) {
+			isTheSameClasses = false;
+		}
+	});
+
+	return newCenters;
 }
 
 function drawClasses() {
-
 	classes.forEach(function(pointsClass, index) {
 		pointsClass.forEach(function(point) {
 			svgContainer.append("circle")
 		   .attr("cx", point[0])
 		   .attr("cy", point[1])
-		   .attr("r", 2)
+		   .attr("r", 3)
 		   .style("fill", colors[index]);
 		});
+		svgContainer.append("circle")
+		.attr("cx", centers[index][0])
+		.attr("cy", centers[index][1])
+		.attr("r", 6)
+		.style("fill", "black");
 	});
 }
 
-function dividePointToClasses(){
 
+
+function dividePointsToClasses(){
 	points.forEach(function(point) {
 		if(!(isClassCenter(point))) {
 			var minDistance,
@@ -84,6 +162,7 @@ function generateClassCenters(classCount) {
 	for(var i = 0; i < classCount; i++) {
 		var index = randomInRange(0, pointsCount - 1);
 		centers.push(points[index]);
+		points.splice(index,1);
 	}
 
 	return centers;
@@ -115,6 +194,7 @@ function isClassCenter(point){
 }
 
 function initializeClasses(){
+	classes = []
 	for(var i = 0; i < classesCount; i++) {
 		classes.push([]);
 	}
